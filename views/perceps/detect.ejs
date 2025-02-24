@@ -1,0 +1,12 @@
+<% layout("/layouts/boilerplate.ejs") %>
+<body>
+    <div id="upload-form">
+        <h2>Upload File for Processing</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="file" id="fileInput" required>
+            <button type="submit">Upload & Process</button>
+        </form>
+    </div>
+    <h3>Processed Output</h3>
+    <div id="output"></div>
+</body>

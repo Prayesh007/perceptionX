@@ -1,0 +1,79 @@
+<% layout("/layouts/boilerplate.ejs") %>
+
+<style>
+.getStarted{
+    background-color: white;
+    padding: 15px 30px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    position: relative;
+}
+.getStarted-hover {
+    width: 0%;
+    height: 100%;
+    background-color: rgb(162, 14, 251);
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: width 0.3s ease-in-out;
+}
+
+.getStarted:hover .getStarted-hover {
+    width: 100%;
+}
+
+.getStarted-text {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 200px;
+    color: black;
+    font-family: sans-serif;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+    position: relative;
+}
+
+.getStarted:hover .getStarted-text {
+    color: white;
+}
+.getStarted:hover .getStarted-arrow {
+    color: white;
+}
+.getStarted-arrow{
+
+    font-size: 30px;
+    height: 25px;
+    width: 25px;
+    margin-left: 5px;
+}
+
+#welcome{
+    font-size: 45px;
+    margin-bottom: 10px;
+    font-weight: 900;
+    background: #feffff -webkit-gradient(linear, left top, right top, from(#ffffff), to(#ffffff), color-stop(0.5, #d70eff)) 0 0 no-repeat;
+    color: rgba(255, 255, 255, 0.1);
+    -webkit-background-clip: text;
+    animation: animate 5s infinite;
+}
+#secondary-title{
+    font-size: 30px;
+    font-family: "Maven Pro", serif;
+}
+</style>
+<body>
+
+        <h3 id="welcome">Welcome to perceptionX!</h3>
+        <h3 id="secondary-title">Unleashing the Power of AI for Object Detection</h3>
+        <p>"Built on the groundbreaking YOLOv11 model, PerceptionX transforms images and videos into actionable insights. Whether you're enhancing automation, revolutionizing security, or exploring new frontiers in AI vision, PerceptionX empowers you to see the unseen." See beyond—every frame tells a story.</p>
+        <a href="/home/detect" class="getStarted">
+            <div class="getStarted-hover"></div>
+            <span class="getStarted-text">
+                Get Started for Free <img class="getStarted-arrow" src="https://img.icons8.com/?size=100&id=DUEu4KFahGkW&format=png&color=000000" alt="">
+            </span>
+        </a>
+
+
+</body>
