@@ -3,7 +3,9 @@ nixPkgs = ["nodejs", "python311"]
 
 [phases.install]
 cmds = [
-  "npm install",
+  "echo 'Checking if Python is installed...'",
+  "which python3 || echo 'Python not found!'",
+  "nix-env -iA nixpkgs.python311",
   "python3 -m ensurepip",
   "pip3 install --upgrade pip",
   "pip3 install ultralytics imageio_ffmpeg"
