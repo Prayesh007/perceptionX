@@ -2,4 +2,9 @@
 nixPkgs = ["nodejs", "python311"]
 
 [phases.install]
-cmds = ["npm install", "python3 -m ensurepip", "pip3 install --upgrade pip", "pip3 install -r requirements.txt"]
+cmds = [
+  "npm install",
+  "python3 -m ensurepip",
+  "pip3 install --upgrade pip",
+  "pip3 install ultralytics imageio_ffmpeg"
+]
