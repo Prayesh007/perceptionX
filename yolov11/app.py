@@ -1,5 +1,14 @@
 import sys
 import time
+
+# Install ultralytics if not available
+try:
+    import ultralytics
+except ModuleNotFoundError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "ultralytics"])
+    import ultralytics
+
+# Now import YOLO
 from ultralytics import YOLO
 from PIL import Image
 import numpy as np
