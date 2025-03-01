@@ -28,7 +28,8 @@ app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
 
 // MongoDB Connection
-const dbUrl = process.env.ATLASDB_URL;
+const dbUrl = "mongodb+srv://aitools2104:zmS7A45hKzw4LdTb@cluster0.tqkyb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&tls=true&tlsInsecure=false";
+// const dbUrl = process.env.ATLASDB_URL;
 
 mongoose.connect(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("MongoDB Connected"))
