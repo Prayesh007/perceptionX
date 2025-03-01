@@ -1,5 +1,5 @@
 ultralytics
+imageio_ffmpeg
 numpy
 opencv-python
 pillow
-imageio_ffmpeg
