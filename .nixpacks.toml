@@ -4,3 +4,4 @@ nixPkgs = ["nodejs", "python311"]
 [phases.install]
 cmds = ["npm install", "pip3 install -r requirements.txt"]
 
+
