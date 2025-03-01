@@ -3,7 +3,9 @@ services:
     name: perceptionX
     env: node
     plan: free
-    buildCommand: npm install
+    buildCommand: |
+      npm install
+      pip install -r requirements.txt
     startCommand: node app.js
     envVars:
       - key: PORT
