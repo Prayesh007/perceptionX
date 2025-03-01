@@ -1,4 +1,5 @@
 import sys
+import time
 from ultralytics import YOLO
 from PIL import Image
 import numpy as np
@@ -21,11 +22,14 @@ def process_image(image_path, output_path, model):
     results = model(image_np)
     annotated_image = results[0].plot()
     cv2.imwrite(output_path, cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+    print("Progress: 100%")  # Send progress update
     print(f"Image processed and saved to {output_path}")
 
 # Process the video
 def process_video(video_path, output_path, model):
     cap = cv2.VideoCapture(video_path)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    processed_frames = 0
     temp_output = os.path.join(tempfile.gettempdir(), "temp_output.avi")
 
     fourcc = cv2.VideoWriter_fourcc(*"XVID")
@@ -41,6 +45,10 @@ def process_video(video_path, output_path, model):
         results = model(frame)
         annotated_frame = results[0].plot()
         out.write(annotated_frame)
+        
+        processed_frames += 1
+        progress = int((processed_frames / total_frames) * 100)
+        print(f"Progress: {progress}%")  # Send progress update
 
     cap.release()
     out.release()
@@ -61,7 +69,7 @@ if __name__ == "__main__":
 
     input_path = sys.argv[1]
     output_path = sys.argv[2]
-    file_type = sys.argv[3]  # 'image' or 'video'
+    file_type = sys.argv[3]
 
     model = load_model()
 
@@ -72,36 +80,3 @@ if __name__ == "__main__":
     else:
         print("Invalid file type. Use 'image' or 'video'.")
 
-
-# import sys
-# from ultralytics import YOLO
-# from PIL import Image
-# import numpy as np
-# import cv2
-# import os
-
-# def load_model():
-#     model = YOLO("C:/Users/praye/Downloads/deploy/runs/detect/train/weights/best.pt")
-#     return model
-
-# def process_image(image_path, output_path, model):
-#     image = Image.open(image_path)
-#     image_np = np.array(image)
-#     results = model(image_np)
-#     annotated_image = results[0].plot()
-#     cv2.imwrite(output_path, cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
-#     print("SUCCESS")
-
-# if __name__ == "__main__":
-#     input_path = sys.argv[1]
-#     output_path = sys.argv[2]
-#     file_type = sys.argv[3]
-
-#     model = load_model()
-
-#     if file_type == "image":
-#         process_image(input_path, output_path, model)
-#     elif file_type == "video":
-#         print("Video processing not implemented yet")
-#     else:
-#         print("Invalid file type")

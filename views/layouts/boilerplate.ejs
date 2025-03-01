@@ -25,7 +25,16 @@
           
 
 
-          <label for="" class="logo"><span>perceptionX</span></label>
+          <!-- <label for="" class="logo"><img src="/assets/perceptionX11.png" alt=""><span>perceptionX</span></label> -->
+          <label for="" class="logo"><span><img src="/assets/perceptionX12.png" alt=""></span></label>
+          <!-- <label class="logo" for=""><img src="/assets/perceptionX8.png" alt=""></label> -->
+          <div class="pc-navbar">
+            <a href="/home" class="active">Home</a>
+            <a href="/home/detect" class="">Detect</a>
+            <a href="/home/about" class="">About</a>
+            <a href="/home/testmonial" class="">Testmonial</a>
+            <a href="/home/contact" class="">Contact</a>
+        </div>
 
 
           <ul>
@@ -90,6 +99,32 @@
 
 <script>
 
+document.addEventListener("DOMContentLoaded", function () {
+    const navbarLinks = document.querySelectorAll(".pc-navbar a");
+
+    // Get the current URL path
+    const currentPath = window.location.pathname;
+
+    navbarLinks.forEach(link => {
+        if (link.getAttribute("href") === currentPath) {
+            link.classList.add("active");
+        } else {
+            link.classList.remove("active");
+        }
+
+        link.addEventListener("click", function () {
+            // Remove active class from all links
+            navbarLinks.forEach(nav => nav.classList.remove("active"));
+
+            // Add active class to clicked link
+            this.classList.add("active");
+        });
+    });
+});
+
+
+
+
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -114,6 +149,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             const uploadedFilePath = `/uploads/${data.filename}`;
             const processedFilePath = `/processed/${data.processedFilename}`;
             document.getElementById('upload-form').style.display = 'none';
+            document.getElementById('output-div').style.display = 'block';
             document.getElementById('output').innerHTML = `
             <div class="uploads">
                 <h4>Uploaded File:</h4>
@@ -138,7 +174,7 @@ function getFileDisplayHTML(filePath) {
     const isVideo = filePath.endsWith('.mp4') || filePath.endsWith('.avi') || filePath.endsWith('.mov');
     
     if (isVideo) {
-        return `<video controls style="display: block;" loop autoplay muted>
+        return `<video controls style="display: block;" loop autoplay>
                     <source src="${filePath}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>`;

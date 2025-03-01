@@ -46,7 +46,24 @@
     font-size: 30px;
     height: 25px;
     width: 25px;
-    margin-left: 5px;
+    margin-left: 7px;
+}
+
+.getStarted-arrow {
+    width: 25px; /* Adjust size as needed */
+    height: 25px;
+    animation: rotateIcon 1.5s linear infinite;
+    will-change: transform; /* Optimizes performance */
+}
+
+@keyframes rotateIcon {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+        /* filter: hue-rotate(120deg); */
+    }
 }
 
 #welcome{
@@ -71,9 +88,18 @@
         <a href="/home/detect" class="getStarted">
             <div class="getStarted-hover"></div>
             <span class="getStarted-text">
-                Get Started for Free <img class="getStarted-arrow" src="https://img.icons8.com/?size=100&id=DUEu4KFahGkW&format=png&color=000000" alt="">
+                <!-- Get Started for Free <img class="getStarted-arrow" src="https://img.icons8.com/?size=100&id=DUEu4KFahGkW&format=png&color=000000" alt=""> -->
+                <!-- Get Started for Free <img class="getStarted-arrow" src="https://img.icons8.com/nolan/64/triquetra.png" alt="triquetra"/> -->
+                Get Started for Free <img class="getStarted-arrow" src="/assets/triquetra2.png" alt="triquetra"/>
             </span>
         </a>
 
 
 </body>
+
+<script>
+window.onload = function () {
+    document.querySelector(".getStarted-arrow").style.animation = "rotateIcon 1.5s linear infinite";
+};
+
+</script>

@@ -7,7 +7,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poiret+One&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&family=Maven+Pro:wght@400..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poiret+One&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&family=Exo+2:ital,wght@0,100..900;1,100..900&family=Maven+Pro:wght@400..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poiret+One&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
 
 
 
@@ -40,11 +40,15 @@ html {
     height: 82px;
 }
 
-
+.navbar{
+    display: flex;
+    justify-content: space-between;
+}
 
 
 .logo {
     display: inline-flex;
+    align-items: center;
     height: 82px;
     font-family: "Montserrat", sans-serif;
     font-optical-sizing: auto;
@@ -52,7 +56,7 @@ html {
     position: relative;
     font-size: 2rem;
     color: white;
-    margin: 0px 4rem;
+    margin: 0px 50px;
     line-height: 5rem;
     font-weight: 700;
     z-index: 1040;
@@ -62,7 +66,7 @@ html {
 .logo span {
     display: flex;
     align-items: center;
-    font-family: "Montserrat", sans-serif;
+    font-family: "Comfortaa", sans-serif;
     font-optical-sizing: auto;
     font-style: normal;
     font-weight: 400;
@@ -70,8 +74,9 @@ html {
     transition: 0.5s;
 }
 
-.logo span img {
-    height: 45px;
+.logo img {
+    width: 400px;
+    height: 40px;
 }
 
 nav ul {
@@ -110,6 +115,7 @@ nav ul li a:hover {
 }
 
 #checkbtn {
+    display: none;
     position: relative;
     float: right;
     line-height: 5rem;
@@ -160,6 +166,50 @@ nav ul li a:hover {
 #check {
     display: none;
 }
+
+.pc-navbar {
+    margin-right: 30px;
+    height: 82px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.pc-navbar a {
+    position: relative;
+    text-decoration: none;
+    font-family: Marcellus SC;
+    color: #a0a0a0;
+    font-size: 24px;
+    letter-spacing: 0.5px;
+    padding: 0 15px;
+}
+
+.pc-navbar a:hover {
+    color: #ffffff;
+}
+
+
+
+.pc-navbar a::after {
+    content: '';
+    position: absolute;
+    background-color: #ff3c78;
+    height: 3px;
+    width: 0;
+    left: 7.5%;
+    bottom: -10px;
+
+}
+
+.pc-navbar a:hover:after,
+.pc-navbar a.active::after {
+    color: #ffffff;
+    width: 85%;
+    transition: 0.3s;
+}
+
+
 
 .light-theme {
     background-color: #D7E4F2;
