@@ -29,11 +29,11 @@
           <label for="" class="logo"><span><img src="/assets/perceptionX12.png" alt=""></span></label>
           <!-- <label class="logo" for=""><img src="/assets/perceptionX8.png" alt=""></label> -->
           <div class="pc-navbar">
-            <a href="/home" class="active">Home</a>
-            <a href="/home/detect" class="">Detect</a>
-            <a href="/home/about" class="">About</a>
-            <a href="/home/testmonial" class="">Testmonial</a>
-            <a href="/home/contact" class="">Contact</a>
+            <a href="/" class="active">Home</a>
+            <a href="/detect" class="">Detect</a>
+            <a href="#" class="">About</a>
+            <a href="#" class="">Testmonial</a>
+            <a href="#" class="">Contact</a>
         </div>
 
 
@@ -123,65 +123,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-
-
-document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const fileInput = document.getElementById('fileInput');
-    if (!fileInput.files.length) {
-        alert('Please select a file.');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-
-    try {
-        const response = await fetch('/process', {
-            method: 'POST',
-            body: formData,
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            const uploadedFilePath = `/uploads/${data.filename}`;
-            const processedFilePath = `/processed/${data.processedFilename}`;
-            document.getElementById('upload-form').style.display = 'none';
-            document.getElementById('output-div').style.display = 'block';
-            document.getElementById('output').innerHTML = `
-            <div class="uploads">
-                <h4>Uploaded File:</h4>
-                ${getFileDisplayHTML(uploadedFilePath)}
-            </div>
-            <div class="processed">
-                <h4>Processed File:</h4>
-                ${getFileDisplayHTML(processedFilePath)}
-            </div>
-            `;
-        } else {
-            document.getElementById('output').innerHTML = '<p>Failed to process the file.</p>';
-        }
-    } catch (err) {
-        console.error('Error:', err);
-        document.getElementById('output').innerHTML = '<p>Error processing the file.</p>';
-    }
-});
-
-// Function to generate correct HTML for images and videos
-function getFileDisplayHTML(filePath) {
-    const isVideo = filePath.endsWith('.mp4') || filePath.endsWith('.avi') || filePath.endsWith('.mov');
-    
-    if (isVideo) {
-        return `<video controls style="display: block;" loop autoplay>
-                    <source src="${filePath}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>`;
-    } else {
-        return `<img src="${filePath}" alt="File" display: block;">`;
-    }
-}
 
 </script>
 

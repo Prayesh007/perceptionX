@@ -11,7 +11,7 @@ import imageio_ffmpeg as ffmpeg
 
 # Load the YOLO model
 def load_model():
-    weights_path = "C:/Users/praye/Downloads/deploy/runs/detect/train/weights/best.pt"
+    weights_path = "./runs/detect/train/weights/best.pt"
     model = YOLO(weights_path)
     return model
 

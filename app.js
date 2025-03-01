@@ -1,8 +1,10 @@
+if (process.env.NODE_ENV !== "production") {
+    require("dotenv").config();
+}
 const express = require("express");
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 const multer = require("multer");
 const File = require("./models/perceps.js");
-const fs = require("fs");
 const { spawn } = require("child_process");
 const cors = require("cors");
 const path = require("path");
@@ -10,10 +12,12 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const http = require("http"); // For WebSockets
 const socketIo = require("socket.io");
+const fs = require("fs");
+const os = require("os");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server); // Attach Socket.IO to server
+const io = socketIo(server);
 
 app.use(cors());
 app.set("view engine", "ejs");
@@ -23,149 +27,114 @@ app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
 
+// MongoDB Connection
+const dbUrl = process.env.ATLASDB_URL;
 
+mongoose.connect(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log("MongoDB Connected"))
+    .catch(err => console.error("MongoDB Connection Failed:", err));
 
-const connectDB = async () => {
-    try {
-        await mongoose.connect("mongodb://127.0.0.1:27017/perceptionX", {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 10000, // Set timeout
-        });
-        console.log("✅ MongoDB Connected");
-    } catch (error) {
-        console.error("❌ MongoDB Connection Failed:", error);
-        process.exit(1);
-    }
-};
-
-connectDB();
-
-module.exports = connectDB;
-
-
-
-
-// Ensure directories exist
-const ensureDir = (dir) => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-};
-ensureDir("public/uploads");
-ensureDir("public/processed");
-
-// Configure multer storage
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, "public/uploads/");
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname)); // Keep original extension
-    },
-});
+// Multer Configuration (Store in Memory)
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-app.get("/home", async (req, res) => {
+app.get("/", async (req, res) => {
     res.render("./perceps/index.ejs");
 });
 
-app.get("/home/detect", async (req, res) => {
+app.get("/detect", async (req, res) => {
     res.render("./perceps/detect.ejs");
 });
 
-// app.post("/process", upload.single("file"), (req, res) => {
-//     if (!req.file) {
-//         return res.status(400).json({ error: "No file uploaded" });
-//     }
-
-//     const inputPath = path.join(__dirname, "public/uploads", req.file.filename);
-//     const fileType = req.file.mimetype.startsWith("image") ? "image" : "video";
-
-//     let outputExt = fileType === "image" ? ".jpg" : ".mp4";
-//     const outputPath = path.join(__dirname, "public/processed", req.file.filename + outputExt);
-
-//     // Run Python script
-//     const pythonScript = path.join(__dirname, "yolov11", "app.py");
-//     const pythonProcess = spawn("python", [pythonScript, inputPath, outputPath, fileType]);
-
-//     pythonProcess.stdout.on("data", (data) => {
-//         console.log(`Python Output: ${data}`);
-//         let progressMatch = data.toString().match(/Progress: (\d+)%/);
-//         if (progressMatch) {
-//             let progress = parseInt(progressMatch[1]);
-//             io.emit("progress", progress); // Send progress update to the client
-//         }
-//     });
-
-//     pythonProcess.stderr.on("data", (data) => {
-//         console.error(`Python Error: ${data}`);
-//     });
-
-//     pythonProcess.on("close", (code) => {
-//         if (code === 0) {
-//             io.emit("progress", 100); // Send 100% completion
-//             res.json({ filename: req.file.filename, processedFilename: req.file.filename + outputExt });
-//         } else {
-//             res.status(500).json({ error: "Processing failed" });
-//         }
-//     });
-// });
-
-
-
+// Upload & Process File
 app.post("/process", upload.single("file"), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const inputPath = path.join(__dirname, "public/uploads", req.file.filename);
     const fileType = req.file.mimetype.startsWith("image") ? "image" : "video";
-    let outputExt = fileType === "image" ? ".jpg" : ".mp4";
-    const outputPath = path.join(__dirname, "public/processed", req.file.filename + outputExt);
+    const outputExt = fileType === "image" ? ".jpg" : ".mp4";
 
-    // Run Python script
-    const pythonScript = path.join(__dirname, "yolov11", "app.py");
-    const pythonProcess = spawn("python", [pythonScript, inputPath, outputPath, fileType]);
+    try {
+        // Save uploaded file to MongoDB
+        const newFile = new File({
+            filename: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            data: req.file.buffer,
+            processedData: null
+        });
 
-    pythonProcess.stdout.on("data", (data) => {
-        console.log(`Python Output: ${data}`);
-        let progressMatch = data.toString().match(/Progress: (\d+)%/);
-        if (progressMatch) {
-            let progress = parseInt(progressMatch[1]);
-            io.emit("progress", progress); // Send progress update to the client
-        }
-    });
+        const savedFile = await newFile.save();
 
-    pythonProcess.stderr.on("data", (data) => {
-        console.error(`Python Error: ${data}`);
-    });
+        // Store files temporarily
+        const tmpDir = os.tmpdir();
+        const inputPath = path.join(tmpDir, req.file.originalname);
+        const outputPath = path.join(tmpDir, req.file.originalname + outputExt);
 
-    pythonProcess.on("close", async (code) => {
-        if (code === 0) {
-            io.emit("progress", 100); // Send 100% completion
-            
-            // Save file details in MongoDB
-            const fileData = new File({
-                filename: req.file.filename,
-                filepath: `/uploads/${req.file.filename}`,
-                mimetype: req.file.mimetype,
-                size: req.file.size,
-                processedFilename: `/processed/${req.file.filename + outputExt}`,
-            });
+        fs.writeFileSync(inputPath, req.file.buffer);
 
-            await fileData.save();
+        // Run Python script
+        const pythonScript = path.join(__dirname, "yolov11", "app.py");
+        const pythonProcess = spawn("python", [pythonScript, inputPath, outputPath, fileType]);
 
-            res.json({ filename: req.file.filename, processedFilename: req.file.filename + outputExt });
-        } else {
-            res.status(500).json({ error: "Processing failed" });
-        }
-    });
+        pythonProcess.stdout.on("data", (data) => {
+            console.log(`Python Output: ${data}`);
+            let progressMatch = data.toString().match(/Progress: (\d+)%/);
+            if (progressMatch) {
+                io.emit("progress", parseInt(progressMatch[1]));
+            }
+        });
+
+        pythonProcess.stderr.on("data", (data) => {
+            console.error(`Python Error: ${data}`);
+        });
+
+        pythonProcess.on("close", async (code) => {
+            if (code === 0) {
+                io.emit("progress", 100);
+
+                // Read and save processed file in MongoDB
+                const processedBuffer = fs.readFileSync(outputPath);
+                await File.findByIdAndUpdate(savedFile._id, { processedData: processedBuffer });
+
+                res.json({ fileId: savedFile._id });
+            } else {
+                res.status(500).json({ error: "Processing failed" });
+            }
+        });
+
+    } catch (error) {
+        console.error("Processing Error:", error);
+        res.status(500).json({ error: "Error processing file." });
+    }
 });
 
+// Fetch Uploaded & Processed Files from MongoDB
+app.get("/file/:id", async (req, res) => {
+    try {
+        const file = await File.findById(req.params.id);
+        if (!file) return res.status(404).json({ error: "File not found" });
 
-// Serve uploaded and processed files
-app.use("/uploads", express.static("public/uploads"));
-app.use("/processed", express.static("public/processed"));
+        res.set("Content-Type", file.mimetype);
+        res.send(file.data);
+    } catch (error) {
+        console.error("File Fetch Error:", error);
+        res.status(500).json({ error: "Error retrieving file." });
+    }
+});
 
-server.listen(3000, () => console.log("Server running on http://localhost:3000/home"));
+app.get("/file/:id/processed", async (req, res) => {
+    try {
+        const file = await File.findById(req.params.id);
+        if (!file || !file.processedData) return res.status(404).json({ error: "Processed file not found" });
+
+        res.set("Content-Type", file.mimetype);
+        res.send(file.processedData);
+    } catch (error) {
+        console.error("Processed File Fetch Error:", error);
+        res.status(500).json({ error: "Error retrieving processed file." });
+    }
+});
+
+server.listen(3000, () => console.log("✅ Server running on http://localhost:3000/"));
