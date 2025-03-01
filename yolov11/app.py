@@ -1,15 +1,30 @@
 import sys
 import time
 
+import subprocess
+
+# Function to install missing packages
+def install_package(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
 # Install ultralytics if not available
 try:
     import ultralytics
 except ModuleNotFoundError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "ultralytics"])
-    import ultralytics
+    install_package("ultralytics")
+    import ultralytics  # Try importing again after installation
+
+# Install imageio_ffmpeg if not available
+try:
+    import imageio_ffmpeg
+except ModuleNotFoundError:
+    install_package("imageio_ffmpeg")
+    import imageio_ffmpeg  # Try importing again after installation
+
 
 # Now import YOLO
 from ultralytics import YOLO
+
 from PIL import Image
 import numpy as np
 import cv2
