@@ -14,19 +14,17 @@ import imageio_ffmpeg as ffmpeg
 
 weights_path = "./yolov11/best.pt"
 
-
-# Load the YOLO model
 def load_model():
+    print(f"🔍 Checking if model exists: {weights_path}")
+
     if not os.path.exists(weights_path):
-        print(f"❌ Model not found: {weights_path}")
-        exit(1)
-    else:
-        print(f"✅ Loading YOLO model from {weights_path}")   
-        model = YOLO(weights_path)
-        return model 
+        print(f"❌ Model NOT FOUND at {weights_path}")
+        exit(1)  # Stop execution if model is missing
 
-
-
+    print(f"✅ Model exists: {weights_path}")    
+    model = YOLO(weights_path)
+    print("🔥 YOLO model loaded successfully!")
+    return model
 
 
 
