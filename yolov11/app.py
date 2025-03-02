@@ -11,11 +11,24 @@ import subprocess
 import os
 import imageio_ffmpeg as ffmpeg
 
+
+weights_path = "./yolov11/best.pt"
+
+
 # Load the YOLO model
 def load_model():
-    weights_path = "./runs/detect/train/weights/best.pt"
-    model = YOLO(weights_path)
-    return model
+    if not os.path.exists(weights_path):
+        print(f"❌ Model not found: {weights_path}")
+        exit(1)
+    else:
+        print(f"✅ Loading YOLO model from {weights_path}")   
+        model = YOLO(weights_path)
+        return model 
+
+
+
+
+
 
 # Process the image
 def process_image(image_path, output_path, model):
