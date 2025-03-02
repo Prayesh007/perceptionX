@@ -47,37 +47,33 @@ app.get("/detect", async (req, res) => {
     res.render("./perceps/detect.ejs");
 });
 
-// Upload & Process File
+
+// // Upload & Process File (MongoDB Atlas)
 // app.post("/process", upload.single("file"), async (req, res) => {
 //     if (!req.file) {
 //         return res.status(400).json({ error: "No file uploaded" });
 //     }
 
 //     const fileType = req.file.mimetype.startsWith("image") ? "image" : "video";
-//     const outputExt = fileType === "image" ? ".jpg" : ".mp4";
 
 //     try {
-//         // Save uploaded file to MongoDB
+//         // ✅ Save uploaded file to MongoDB
 //         const newFile = new File({
 //             filename: req.file.originalname,
 //             mimetype: req.file.mimetype,
 //             size: req.file.size,
-//             data: req.file.buffer,
+//             data: Buffer.from(req.file.buffer),  // Ensure binary storage
 //             processedData: null
 //         });
-
+        
 //         const savedFile = await newFile.save();
+//         console.log("✅ File successfully saved to MongoDB with ID:", savedFile._id.toString());  // Convert _id to string
+        
 
-//         // Store files temporarily
-//         const tmpDir = os.tmpdir();
-//         const inputPath = path.join(tmpDir, req.file.originalname);
-//         const outputPath = path.join(tmpDir, req.file.originalname + outputExt);
 
-//         fs.writeFileSync(inputPath, req.file.buffer);
-
-//         // Run Python script
+//         // ✅ Run Python script, fetching file from MongoDB (No need to store locally)
 //         const pythonScript = path.join(__dirname, "yolov11", "app.py");
-//         const pythonProcess = spawn("python", [pythonScript, inputPath, outputPath, fileType]);
+//         const pythonProcess = spawn("python", [pythonScript, savedFile._id.toString(), fileType]);
 
 //         pythonProcess.stdout.on("data", (data) => {
 //             console.log(`Python Output: ${data}`);
@@ -94,11 +90,6 @@ app.get("/detect", async (req, res) => {
 //         pythonProcess.on("close", async (code) => {
 //             if (code === 0) {
 //                 io.emit("progress", 100);
-
-//                 // Read and save processed file in MongoDB
-//                 const processedBuffer = fs.readFileSync(outputPath);
-//                 await File.findByIdAndUpdate(savedFile._id, { processedData: processedBuffer });
-
 //                 res.json({ fileId: savedFile._id });
 //             } else {
 //                 res.status(500).json({ error: "Processing failed" });
@@ -111,13 +102,60 @@ app.get("/detect", async (req, res) => {
 //     }
 // });
 
+
+// // Fetch Uploaded & Processed Files from MongoDB
+// app.get("/file/:id", async (req, res) => {
+//     try {
+//         const file = await File.findById(req.params.id);
+//         if (!file) return res.status(404).json({ error: "File not found" });
+
+//         res.set("Content-Type", file.mimetype);
+//         res.send(file.data);
+//     } catch (error) {
+//         console.error("File Fetch Error:", error);
+//         res.status(500).json({ error: "Error retrieving file." });
+//     }
+// });
+
+// app.get("/file/:id/processed", async (req, res) => {
+//     try {
+//         const file = await File.findById(req.params.id);
+//         if (!file || !file.processedData) {
+//             return res.status(404).json({ error: "Processed file not found" });
+//         }
+
+//         // ✅ Check if file is a video or image
+//         if (file.mimetype.startsWith("video")) {
+//             res.set("Content-Type", file.mimetype);
+//             res.send(file.processedData);
+//         } else if (file.mimetype.startsWith("image")) {
+//             res.set("Content-Type", "image/jpeg");
+//             res.send(file.processedData);
+//         } else {
+//             res.status(400).json({ error: "Unsupported file type" });
+//         }
+//     } catch (error) {
+//         console.error("Error retrieving processed file:", error);
+//         res.status(500).json({ error: "Error retrieving file." });
+//     }
+// });
+
+
+
+
+
+// server.listen(3000, () => console.log("✅ Server running on http://localhost:3000/"));
+
+
 // Upload & Process File (MongoDB Atlas)
 app.post("/process", upload.single("file"), async (req, res) => {
     if (!req.file) {
+        console.error("No file uploaded.");
         return res.status(400).json({ error: "No file uploaded" });
     }
 
     const fileType = req.file.mimetype.startsWith("image") ? "image" : "video";
+    console.log("Received file of type:", fileType);
 
     try {
         // ✅ Save uploaded file to MongoDB
@@ -128,18 +166,16 @@ app.post("/process", upload.single("file"), async (req, res) => {
             data: Buffer.from(req.file.buffer),  // Ensure binary storage
             processedData: null
         });
-        
-        const savedFile = await newFile.save();
-        console.log("✅ File successfully saved to MongoDB with ID:", savedFile._id.toString());  // Convert _id to string
-        
 
+        const savedFile = await newFile.save();
+        console.log("✅ File successfully saved to MongoDB with ID:", savedFile._id.toString());
 
         // ✅ Run Python script, fetching file from MongoDB (No need to store locally)
         const pythonScript = path.join(__dirname, "yolov11", "app.py");
         const pythonProcess = spawn("python", [pythonScript, savedFile._id.toString(), fileType]);
 
         pythonProcess.stdout.on("data", (data) => {
-            console.log(`Python Output: ${data}`);
+            console.log(`Python Output: ${data.toString()}`);
             let progressMatch = data.toString().match(/Progress: (\d+)%/);
             if (progressMatch) {
                 io.emit("progress", parseInt(progressMatch[1]));
@@ -147,35 +183,40 @@ app.post("/process", upload.single("file"), async (req, res) => {
         });
 
         pythonProcess.stderr.on("data", (data) => {
-            console.error(`Python Error: ${data}`);
+            console.error(`Python Error: ${data.toString()}`);
         });
 
         pythonProcess.on("close", async (code) => {
+            console.log("Python process closed with code:", code);
             if (code === 0) {
                 io.emit("progress", 100);
                 res.json({ fileId: savedFile._id });
             } else {
+                console.error("❌ Processing failed. Python script exited with error code:", code);
                 res.status(500).json({ error: "Processing failed" });
             }
         });
 
     } catch (error) {
-        console.error("Processing Error:", error);
+        console.error("Error processing file:", error);
         res.status(500).json({ error: "Error processing file." });
     }
 });
-
 
 // Fetch Uploaded & Processed Files from MongoDB
 app.get("/file/:id", async (req, res) => {
     try {
         const file = await File.findById(req.params.id);
-        if (!file) return res.status(404).json({ error: "File not found" });
+        if (!file) {
+            console.error(`File with ID ${req.params.id} not found.`);
+            return res.status(404).json({ error: "File not found" });
+        }
 
+        console.log(`✅ Fetching file with ID: ${req.params.id}`);
         res.set("Content-Type", file.mimetype);
         res.send(file.data);
     } catch (error) {
-        console.error("File Fetch Error:", error);
+        console.error("Error fetching file:", error);
         res.status(500).json({ error: "Error retrieving file." });
     }
 });
@@ -184,17 +225,21 @@ app.get("/file/:id/processed", async (req, res) => {
     try {
         const file = await File.findById(req.params.id);
         if (!file || !file.processedData) {
+            console.error(`Processed file not found for ID: ${req.params.id}`);
             return res.status(404).json({ error: "Processed file not found" });
         }
 
         // ✅ Check if file is a video or image
         if (file.mimetype.startsWith("video")) {
+            console.log(`✅ Sending processed video file for ID: ${req.params.id}`);
             res.set("Content-Type", file.mimetype);
             res.send(file.processedData);
         } else if (file.mimetype.startsWith("image")) {
+            console.log(`✅ Sending processed image file for ID: ${req.params.id}`);
             res.set("Content-Type", "image/jpeg");
             res.send(file.processedData);
         } else {
+            console.error(`Unsupported file type for ID: ${req.params.id}`);
             res.status(400).json({ error: "Unsupported file type" });
         }
     } catch (error) {
@@ -203,8 +248,6 @@ app.get("/file/:id/processed", async (req, res) => {
     }
 });
 
-
-
-
-
-server.listen(3000, () => console.log("✅ Server running on http://localhost:3000/"));
+server.listen(3000, () => {
+    console.log("✅ Server running on http://localhost:3000/");
+});
