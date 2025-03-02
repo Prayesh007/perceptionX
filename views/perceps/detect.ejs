@@ -216,26 +216,13 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (response.ok) {
-            const fileUrl = `/file/${data.fileId}`;
-            const processedUrl = `/file/${data.fileId}/processed`;
+            const fileId = data.fileId;
 
             document.getElementById('upload-form').style.display = 'none';
             document.getElementById('output-div').style.display = 'block';
 
-            // Fetch and insert the correct HTML for both files
-            const uploadedHTML = await getFileDisplayHTML(fileUrl);
-            const processedHTML = await getFileDisplayHTML(processedUrl);
-
-            document.getElementById('output').innerHTML = `
-                <div class="uploads">
-                    <h4>Uploaded File:</h4>
-                    ${uploadedHTML}
-                </div>
-                <div class="processed">
-                    <h4>Processed File:</h4>
-                    ${processedHTML}
-                </div>
-            `;
+            // Fetch and display uploaded & processed file from MongoDB Atlas
+            displayFilesFromMongo(fileId);
         } else {
             document.getElementById('output').innerHTML = '<p>Failed to process the file.</p>';
         }
@@ -246,35 +233,52 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
 });
 
 
-function getFileDisplayHTML(fileUrl) {
-    // Create an XHR request to fetch the Content-Type synchronously
-    const xhr = new XMLHttpRequest();
-    xhr.open("HEAD", fileUrl, false); // false makes it synchronous
-    xhr.send(null);
+async function displayFilesFromMongo(fileId) {
+    const uploadedUrl = `/file/${fileId}`;
+    const processedUrl = `/file/${fileId}/processed`;
 
-    const contentType = xhr.getResponseHeader("Content-Type");
+    const uploadedHTML = await getFileDisplayHTML(uploadedUrl);
+    const processedHTML = await getFileDisplayHTML(processedUrl);
 
-    if (!contentType) {
-        console.error("Could not fetch Content-Type.");
+    document.getElementById('output').innerHTML = `
+        <div class="uploads">
+            <h4>Uploaded File:</h4>
+            ${uploadedHTML}
+        </div>
+        <div class="processed">
+            <h4>Processed File:</h4>
+            ${processedHTML}
+        </div>
+    `;
+}
+
+
+async function getFileDisplayHTML(fileUrl) {
+    try {
+        const response = await fetch(fileUrl, { method: "HEAD" });
+        const contentType = response.headers.get("Content-Type");
+
+        if (!contentType) {
+            console.error("Could not fetch Content-Type.");
+            return `<p>Error loading file.</p>`;
+        }
+
+        if (contentType.startsWith("video")) {
+            return `<video controls style="display: block; max-width: 100%;" loop autoplay>
+                        <source src="${fileUrl}" type="${contentType}">
+                        Your browser does not support the video tag.
+                    </video>`;
+        } else if (contentType.startsWith("image")) {
+            return `<img src="${fileUrl}" alt="Processed File" style="display: block; max-width: 100%;">`;
+        } else {
+            return `<p>Unsupported file type.</p>`;
+        }
+    } catch (error) {
+        console.error("Error fetching file metadata:", error);
         return `<p>Error loading file.</p>`;
     }
-
-    // Check if file is a video
-    if (contentType.startsWith("video")) {
-        return `<video controls style="display: block; max-width: 100%;" loop autoplay>
-                    <source src="${fileUrl}" type="${contentType}">
-                    Your browser does not support the video tag.
-                </video>`;
-    } 
-    // Check if file is an image
-    else if (contentType.startsWith("image")) {
-        return `<img src="${fileUrl}" alt="File" style="display: block; max-width: 100%;">`;
-    } 
-    // Handle unsupported files
-    else {
-        return `<p>Unsupported file type.</p>`;
-    }
 }
+
 
 
             var socket = io();
@@ -372,3 +376,233 @@ function getFileDisplayHTML(fileUrl) {
         </script>
 
     </body>
+
+
+<!-- 
+    <% layout("/layouts/boilerplate.ejs") %>
+<style>
+    #progressBar-div {
+        text-align: center;
+        margin-left: -50px;
+    }
+
+    #progressBar-div h3 {
+        margin-bottom: 20px !important;
+    }
+
+    .loading-container {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .loading-icon {
+        width: 50px;
+        height: 50px;
+        animation: rotateIcon 1s linear infinite;
+    }
+
+    @keyframes rotateIcon {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    #progressText {
+        margin-top: 20px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    #output-div {
+        display: none;
+    }
+
+    #output h4 {
+        font-family: 'Maven Pro';
+        margin-bottom: 5px;
+        font-size: 25px;
+    }
+
+    #upload-form {
+        margin: auto;
+        width: 70%;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        color: #fff;
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .upload-box {
+        width: 100%;
+        padding: 20px;
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .upload-box img {
+        display: block;
+        margin: 0 auto 10px;
+    }
+
+    .upload-box p {
+        font-size: 1rem;
+        color: #ddd;
+    }
+
+    #fileInput {
+        display: none;
+    }
+
+    #file-name {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #ccc;
+        font-style: italic;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #8A2BE2, #6A0DAD);
+        color: #fff;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.3s ease-in-out;
+        margin-top: 15px;
+    }
+
+    button:hover {
+        background: linear-gradient(135deg, #6A0DAD, #8A2BE2);
+        box-shadow: 0px 0px 10px #8A2BE2;
+    }
+</style>
+
+<body>
+    <div id="upload-form">
+        <h2>Upload File for Processing</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <label for="fileInput">
+                <div class="upload-box">
+                    <img width="70" height="70" src="https://img.icons8.com/ios-filled/70/upload-to-cloud--v1.png" alt="upload-to-cloud" />
+                    <p>Drag & Drop or click to upload</p>
+                </div>
+                <input type="file" name="file" id="fileInput" required>
+            </label>
+            <button onclick="handleProgressBar()" type="submit">Upload & Process</button>
+        </form>
+    </div>
+
+    <div id="progressBar-div" style="display: none;">
+        <h3>PerceptionX is crafting precision, the wait will be worth it!</h3>
+        <div class="loading-container">
+            <img class="loading-icon" src="/assets/triquetra4.png" alt="triquetra" id="loadingIcon">
+            <span id="progressText">0%</span>
+        </div>
+        <progress id="progressBar" value="0" max="100"></progress>
+    </div>
+
+    <div id="output-div">
+        <div id="output"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Please select a file.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const fileUrl = `/file/${data.fileId}`;
+                    const processedUrl = `/file/${data.fileId}/processed`;
+
+                    document.getElementById('upload-form').style.display = 'none';
+                    document.getElementById('output-div').style.display = 'block';
+
+                    await checkProcessedFile(data.fileId);
+                } else {
+                    document.getElementById('output').innerHTML = '<p>Failed to process the file.</p>';
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                document.getElementById('output').innerHTML = '<p>Error processing the file.</p>';
+            }
+        });
+
+        async function checkProcessedFile(fileId) {
+            try {
+                const response = await fetch(`/file/${fileId}/processed`);
+
+                if (response.ok) {
+                    const contentType = response.headers.get("Content-Type");
+
+                    const blob = await response.blob();
+                    const fileUrl = URL.createObjectURL(blob);
+
+                    let displayHTML = "";
+
+                    if (contentType.startsWith("video")) {
+                        displayHTML = `<video controls loop autoplay style="display: block; max-width: 100%;">
+                                        <source src="${fileUrl}" type="${contentType}">
+                                        Your browser does not support the video tag.
+                                      </video>`;
+                    } else if (contentType.startsWith("image")) {
+                        displayHTML = `<img src="${fileUrl}" alt="Processed File" style="display: block; max-width: 100%;">`;
+                    } else {
+                        displayHTML = `<p>Unsupported file type.</p>`;
+                    }
+
+                    document.getElementById('output').innerHTML = `
+                        <div class="processed">
+                            <h4>Processed File:</h4>
+                            ${displayHTML}
+                        </div>`;
+                } else {
+                    console.error("Processed file not found.");
+                    document.getElementById('output').innerHTML = '<p>Processed file not found.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching processed file:", error);
+                document.getElementById('output').innerHTML = '<p>Error retrieving processed file.</p>';
+            }
+        }
+
+        function handleProgressBar() {
+            document.getElementById('progressBar-div').style.display = 'block';
+            document.getElementById('upload-form').style.display = 'none';
+        }
+    </script>
+</body> -->
