@@ -146,7 +146,6 @@ app.get("/detect", async (req, res) => {
 
 // server.listen(3000, () => console.log("✅ Server running on http://localhost:3000/"));
 
-
 // Upload & Process File (MongoDB Atlas)
 app.post("/process", upload.single("file"), async (req, res) => {
     if (!req.file) {
@@ -172,6 +171,8 @@ app.post("/process", upload.single("file"), async (req, res) => {
 
         // ✅ Run Python script, passing file ID and type
         const pythonScript = path.join(__dirname, "yolov11", "app.py");
+        console.log("🔍 Running Python script:", pythonScript, savedFile._id.toString(), fileType);
+
         const pythonProcess = spawn("python", [pythonScript, savedFile._id.toString(), fileType]);
 
         pythonProcess.stdout.on("data", (data) => {
@@ -184,6 +185,10 @@ app.post("/process", upload.single("file"), async (req, res) => {
 
         pythonProcess.stderr.on("data", (data) => {
             console.error(`Python Error: ${data.toString()}`);
+        });
+
+        pythonProcess.on("error", (error) => {
+            console.error("❌ Error spawning Python process:", error);
         });
 
         pythonProcess.on("close", async (code) => {
