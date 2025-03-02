@@ -48,16 +48,79 @@ app.get("/detect", async (req, res) => {
 });
 
 // Upload & Process File
+// app.post("/process", upload.single("file"), async (req, res) => {
+//     if (!req.file) {
+//         return res.status(400).json({ error: "No file uploaded" });
+//     }
+
+//     const fileType = req.file.mimetype.startsWith("image") ? "image" : "video";
+//     const outputExt = fileType === "image" ? ".jpg" : ".mp4";
+
+//     try {
+//         // Save uploaded file to MongoDB
+//         const newFile = new File({
+//             filename: req.file.originalname,
+//             mimetype: req.file.mimetype,
+//             size: req.file.size,
+//             data: req.file.buffer,
+//             processedData: null
+//         });
+
+//         const savedFile = await newFile.save();
+
+//         // Store files temporarily
+//         const tmpDir = os.tmpdir();
+//         const inputPath = path.join(tmpDir, req.file.originalname);
+//         const outputPath = path.join(tmpDir, req.file.originalname + outputExt);
+
+//         fs.writeFileSync(inputPath, req.file.buffer);
+
+//         // Run Python script
+//         const pythonScript = path.join(__dirname, "yolov11", "app.py");
+//         const pythonProcess = spawn("python", [pythonScript, inputPath, outputPath, fileType]);
+
+//         pythonProcess.stdout.on("data", (data) => {
+//             console.log(`Python Output: ${data}`);
+//             let progressMatch = data.toString().match(/Progress: (\d+)%/);
+//             if (progressMatch) {
+//                 io.emit("progress", parseInt(progressMatch[1]));
+//             }
+//         });
+
+//         pythonProcess.stderr.on("data", (data) => {
+//             console.error(`Python Error: ${data}`);
+//         });
+
+//         pythonProcess.on("close", async (code) => {
+//             if (code === 0) {
+//                 io.emit("progress", 100);
+
+//                 // Read and save processed file in MongoDB
+//                 const processedBuffer = fs.readFileSync(outputPath);
+//                 await File.findByIdAndUpdate(savedFile._id, { processedData: processedBuffer });
+
+//                 res.json({ fileId: savedFile._id });
+//             } else {
+//                 res.status(500).json({ error: "Processing failed" });
+//             }
+//         });
+
+//     } catch (error) {
+//         console.error("Processing Error:", error);
+//         res.status(500).json({ error: "Error processing file." });
+//     }
+// });
+
+// Upload & Process File (MongoDB Atlas)
 app.post("/process", upload.single("file"), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
     }
 
     const fileType = req.file.mimetype.startsWith("image") ? "image" : "video";
-    const outputExt = fileType === "image" ? ".jpg" : ".mp4";
 
     try {
-        // Save uploaded file to MongoDB
+        // ✅ Save uploaded file to MongoDB
         const newFile = new File({
             filename: req.file.originalname,
             mimetype: req.file.mimetype,
@@ -68,16 +131,9 @@ app.post("/process", upload.single("file"), async (req, res) => {
 
         const savedFile = await newFile.save();
 
-        // Store files temporarily
-        const tmpDir = os.tmpdir();
-        const inputPath = path.join(tmpDir, req.file.originalname);
-        const outputPath = path.join(tmpDir, req.file.originalname + outputExt);
-
-        fs.writeFileSync(inputPath, req.file.buffer);
-
-        // Run Python script
+        // ✅ Run Python script, fetching file from MongoDB (No need to store locally)
         const pythonScript = path.join(__dirname, "yolov11", "app.py");
-        const pythonProcess = spawn("python", [pythonScript, inputPath, outputPath, fileType]);
+        const pythonProcess = spawn("python", [pythonScript, savedFile._id.toString(), fileType]);
 
         pythonProcess.stdout.on("data", (data) => {
             console.log(`Python Output: ${data}`);
@@ -94,11 +150,6 @@ app.post("/process", upload.single("file"), async (req, res) => {
         pythonProcess.on("close", async (code) => {
             if (code === 0) {
                 io.emit("progress", 100);
-
-                // Read and save processed file in MongoDB
-                const processedBuffer = fs.readFileSync(outputPath);
-                await File.findByIdAndUpdate(savedFile._id, { processedData: processedBuffer });
-
                 res.json({ fileId: savedFile._id });
             } else {
                 res.status(500).json({ error: "Processing failed" });
@@ -110,6 +161,7 @@ app.post("/process", upload.single("file"), async (req, res) => {
         res.status(500).json({ error: "Error processing file." });
     }
 });
+
 
 // Fetch Uploaded & Processed Files from MongoDB
 app.get("/file/:id", async (req, res) => {
