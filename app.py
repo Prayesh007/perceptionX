@@ -211,6 +211,12 @@ import imageio_ffmpeg as ffmpeg
 from io import BytesIO
 from bson import ObjectId  
 
+import matplotlib
+matplotlib.use('Agg')  # Use a non-GUI backend to prevent font cache issues
+import matplotlib.pyplot as plt
+os.environ["ULTRALYTICS_CONFIG_DIR"] = "/tmp/Ultralytics"
+
+
 # 🔹 MongoDB Connection
 MONGO_URI = "mongodb+srv://aitools2104:kDTRxzV6MgO4nicA@cluster0.tqkyb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&tls=true&tlsInsecure=false"
 DATABASE_NAME = "test"
