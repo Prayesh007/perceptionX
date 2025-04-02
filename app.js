@@ -73,8 +73,12 @@ app.post("/process", upload.single("file"), async (req, res) => {
         console.log(" File successfully saved to MongoDB with ID:", savedFile._id.toString());
 
         //  Run Python script, passing file ID and type
-        const pythonScript = path.join(__dirname, "yolov11", "app.py");
+        // const pythonScript = path.join(__dirname, "yolov11", "app.py");
+        // const pythonProcess = spawn("python", [pythonScript, savedFile._id.toString(), fileType]);
+
+        const pythonScript = path.join(__dirname, "app.py");
         const pythonProcess = spawn("python", [pythonScript, savedFile._id.toString(), fileType]);
+
 
         pythonProcess.stdout.on("data", (data) => {
             console.log(`Python Output: ${data.toString()}`);
